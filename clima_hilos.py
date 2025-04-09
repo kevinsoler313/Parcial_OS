@@ -13,11 +13,9 @@ from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Variables compartidas
 datos_climaticos = {"temperatura": 25.0, "humedad": 50.0, "presion": 1013.0}
 data_lock = threading.Lock()
 
-# Historial limitado para graficar
 historial = {
     "tiempo": deque(maxlen=50),
     "temperatura": deque(maxlen=50),
@@ -25,21 +23,19 @@ historial = {
     "presion": deque(maxlen=50)
 }
 
-# Hilo 1: Generar datos simulados
 def generar_datos():
     while True:
         with data_lock:
-            # Pequeñas variaciones
+
             datos_climaticos["temperatura"] += random.uniform(-2, 2)
             datos_climaticos["humedad"] += random.uniform(-20, 20)
             datos_climaticos["presion"] += random.uniform(-80, 80)
-            # Limitar rangos
+
             datos_climaticos["temperatura"] = max(0, min(27, datos_climaticos["temperatura"]))
             datos_climaticos["humedad"] = max(30, min(82, datos_climaticos["humedad"]))
             datos_climaticos["presion"] = max(600, min(751, datos_climaticos["presion"]))
         time.sleep(1)
 
-# Hilo 2: Guardar en CSV
 def registrar_datos():
     with open("datos_climaticos.csv", mode="w", newline="") as archivo:
         escritor = csv.writer(archivo)
@@ -68,33 +64,28 @@ def interfaz_grafica():
             historial["humedad"].append(datos_climaticos["humedad"])
             historial["presion"].append(datos_climaticos["presion"])
 
-        # Borrar cada gráfico antes de actualizar
         ax1.clear()
         ax2.clear()
         ax3.clear()
 
-        # Gráfica de Temperatura
         ax1.plot(historial["tiempo"], historial["temperatura"], color='red')
         ax1.set_title("Temperatura (°C)")
         ax1.set_ylabel("°C")
         ax1.set_xticklabels(historial["tiempo"], rotation=45, ha="right")
         ax1.grid(True)
 
-        # Gráfica de Humedad
         ax2.plot(historial["tiempo"], historial["humedad"], color='blue')
         ax2.set_title("Humedad (%)")
         ax2.set_ylabel("%")
         ax2.set_xticklabels(historial["tiempo"], rotation=45, ha="right")
         ax2.grid(True)
 
-        # Gráfica de Presión
         ax3.plot(historial["tiempo"], historial["presion"], color='green')
         ax3.set_title("Presión (hPa)")
         ax3.set_ylabel("hPa")
         ax3.set_xticklabels(historial["tiempo"], rotation=45, ha="right")
         ax3.grid(True)
 
-        # Texto descriptivo
         descripcion.set(f"Temperatura: {round(datos_climaticos['temperatura'],1)} °C | "
                         f"Humedad: {round(datos_climaticos['humedad'],1)} % | "
                         f"Presión: {round(datos_climaticos['presion'],1)} hPa")
@@ -102,11 +93,9 @@ def interfaz_grafica():
         canvas.draw()
         root.after(1000, actualizar_grafica)
 
-    # Crear ventana
     root = tk.Tk()
     root.title("Estación Meteorológica")
 
-    # Crear figura con 3 subplots
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
 
     canvas = FigureCanvasTkAgg(fig, master=root)
@@ -119,8 +108,6 @@ def interfaz_grafica():
     actualizar_grafica()
     root.mainloop()
 
-
-# Crear y lanzar hilos
 hilos = [
     threading.Thread(target=generar_datos),
     threading.Thread(target=registrar_datos),
@@ -131,7 +118,6 @@ for hilo in hilos:
     hilo.daemon = True
     hilo.start()
 
-# Mantener el programa activo
 try:
     while True:
         time.sleep(5)
